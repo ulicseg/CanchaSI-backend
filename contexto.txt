@@ -1,0 +1,425 @@
+# 📘 La Biblia del Backend: Cancha-SI (MVP)
+
+---
+
+Objetivo: Construir una API robusta y modular sobre Firebase Cloud Functions para gestionar reservas de canchas de fútbol, pagos y búsqueda de jugadores.
+
+Meta Académica: ~40 Endpoints, uso de Firestore, Realtime Database y Cloud Functions.
+
+---
+
+## 1. Arquitectura y Reglas de Oro 🏛️
+
+Antes de tirar una línea de código, grabense esto a fuego.
+
+1. **Somos Modulares:** No hacemos un archivo gigante. Dividimos la app en 3 micro-apps dentro de `functions`:
+    - `management` (Gestión Dueños/Complejos) -> **Dev A**
+    - `bookings` (Reservas/Pagos) -> **Dev B**
+    - `social` (Jugadores/Social/Notis) -> **Dev C**
+2. **ES Modules:** Usamos `import` y `export`, nada de `require`. (Agregar `"type": "module"` en `package.json`).
+3. **Patrón de Capas:** Cada endpoint respeta estrictamente este flujo:
+    - **Ruta (`routes`)**: Define la URL y llama al controlador.
+    - **Controlador (`controllers`)**: Recibe `req`, `res`, extrae datos y llama al servicio. Responde HTTP (200, 400, 500).
+    - **Servicio (`services`)**: Contiene la **Lógica de Negocio** (validaciones, cálculos, reglas). Llama al repositorio.
+    - **Repositorio (`repositories`)**: El único que toca la Base de Datos (Firestore/RTDB).
+
+---
+
+## 2. Estructura de Carpetas (El Mapa) 🗺️
+
+Así debe verse su proyecto. Créenlo tal cual.
+
+Plaintext
+
+```jsx
+functions/
+├── package.json      <-- Agregar "type": "module"
+├── firebase.json
+├── index.js          <-- Punto de entrada (Exporta las 3 APIs)
+└── src/
+    ├── config/       <-- Configuración compartida
+    │   └── firebase.js  <-- Inicialización de Admin SDK y DBs
+    │
+    ├── management/   <-- [DEV A] ZONA DE TRABAJO
+    │   ├── routes/
+    │   ├── controllers/
+    │   ├── services/
+    │   ├── repositories/
+    │   └── index.js  <-- Express App de Management
+    │
+    ├── bookings/     <-- [DEV B] ZONA DE TRABAJO
+    │   ├── routes/
+    │   ├── controllers/
+    │   ├── services/
+    │   ├── repositories/
+    │   └── index.js  <-- Express App de Bookings
+    │
+    └── social/       <-- [DEV C] ZONA DE TRABAJO
+        ├── routes/
+        ├── controllers/
+        ├── services/
+        ├── repositories/
+        └── index.js  <-- Express App de Social
+```
+
+---
+
+## 3. Fase 0: Configuración Inicial (Juntos) 🤝
+
+Uno de ustedes (el que tenga la cuenta de Firebase) hace esto y lo sube a GitHub. Los demás clonan.
+
+1. **Instalar Firebase Tools:** `npm install -g firebase-tools`
+2. **Iniciar Proyecto:** `firebase init functions` (Elegir JavaScript).
+3. **Configurar Módulos:** En la carpeta `functions`, abrir `package.json` y agregar `"type": "module"`.
+4. **Instalar Dependencias:**Bash
+
+```jsx
+cd functions
+npm install express cors dotenv firebase-admin firebase-functions
+```
+
+1. **Crear el archivo `src/config/firebase.js`:**JavaScript
+    
+    ```jsx
+    import admin from 'firebase-admin';
+    import { getFirestore } from 'firebase-admin/firestore';
+    import { getDatabase } from 'firebase-admin/database'; // Para RTDB
+    
+    admin.initializeApp();
+    
+    export const db = getFirestore(); // Firestore
+    export const rtdb = getDatabase(); // Realtime DB
+    ```
+    
+
+---
+
+## 4. Fase 1: Tareas por Rol (Paso a Paso) 🚀
+
+Cada uno trabaja en su carpeta dentro de `src/`. ¡No toquen la carpeta del otro!
+
+### 👷‍♂️ DEV A: Gestión y Administración (Management)
+
+Tu Misión: Crear el sistema para que los dueños carguen sus complejos.
+
+Base de Datos: Firestore (owners, complexes).
+
+**Tus 13 Endpoints (Definilos en `routes/`):**
+
+1. `POST /owners/register` - Crear cuenta de dueño en Firestore.
+2. `GET /owners/profile` - Datos del dueño actual.
+3. `PUT /owners/profile` - Editar teléfono/nombre.
+4. `POST /complexes` - Crear un complejo nuevo.
+5. `PUT /complexes/:id` - Editar datos básicos del complejo.
+6. `GET /complexes/mine` - Listar todos mis complejos.
+7. `POST /complexes/:id/photos` - Agregar URL de foto (String).
+8. `DELETE /complexes/:id/photos/:index` - Quitar foto.
+9. `POST /fields` - Crear cancha dentro de un complejo.
+10. `PUT /fields/:id` - Editar precio de la cancha.
+11. `DELETE /fields/:id` - Desactivar cancha.
+12. `GET /dashboard/stats` - Calcular total de reservas e ingresos.
+13. `GET /complexes/:id/reservations` - Listar reservas de un complejo (para la agenda del dueño).
+
+**Tu Cloud Function (En `index.js` principal):**
+
+- `onComplexCreate`: Trigger de Firestore. Cuando se crea un complejo, loguear en consola "Nuevo complejo registrado: [Nombre]".
+
+---
+
+### ⚽ DEV B: Reservas y Pagos (Bookings)
+
+Tu Misión: El corazón del negocio. Buscar, Bloquear, Pagar.
+
+Base de Datos: Firestore (reservations, holds).
+
+**Tus 14 Endpoints (Definilos en `routes/`):**
+
+1. `GET /search/complexes` - Listar complejos (filtros simples).
+2. `GET /search/complexes/:id` - Detalle completo del complejo.
+3. `GET /availability/:fieldId` - Ver horarios libres.
+4. `POST /bookings/hold` - **CRÍTICO:** Crear doc en `holds` (bloqueo 15 min).
+5. `POST /mp/create-preference` - Crear link de pago (Mock o Real).
+6. `POST /mp/webhook` - Recibir pago -> Crear Reserva real -> Borrar Hold.
+7. `GET /bookings/my-bookings` - Historial del jugador.
+8. `GET /bookings/:id` - Detalle de reserva.
+9. `POST /bookings/:id/cancel` - Cancelar (chequear reglas).
+10. `POST /owner/bookings/manual` - Reserva manual hecha por el dueño.
+11. `POST /owner/bookings/:id/cancel` - Dueño cancela reserva.
+12. `POST /owner/relist-slot` - Volver a publicar un horario cancelado.
+13. `GET /config/fees` - Devolver % de seña actual.
+14. `POST /bookings/invite` - Generar texto de invitación para WhatsApp.
+
+**Tus Cloud Functions (En `index.js` principal):**
+
+- `checkExpiredHolds`: **Cron Job (Scheduled)**. Ejecutar cada 5 min. Buscar docs en `holds` viejos y borrarlos.
+- `onPaymentConfirmed`: Trigger Firestore. Al crearse una reserva `paid`, marcar horario ocupado.
+
+---
+
+### 🤝 DEV C: Social y Jugadores (Social)
+
+Tu Misión: La comunidad. "Necesito Jugadores" y Notificaciones.
+
+Base de Datos: Firestore (users, reviews) y Realtime Database (notifications).
+
+**Tus 13 Endpoints (Definilos en `routes/`):**
+
+1. `POST /players/auth` - Guardar usuario en Firestore al registrarse.
+2. `GET /players/me` - Mi perfil.
+3. `PUT /players/me` - Actualizar posición/foto.
+4. `POST /matchmaking/create` - Publicar "Me faltan X jugadores" para una reserva.
+5. `GET /matchmaking/feed` - Ver lista de partidos buscando gente.
+6. `POST /matchmaking/:id/apply` - Postularse para jugar.
+7. `GET /matchmaking/:id/applicants` - Ver postulantes (solo creador).
+8. `PUT /matchmaking/applicant/:id/accept` - Aceptar jugador.
+9. `PUT /matchmaking/applicant/:id/reject` - Rechazar jugador.
+10. `POST /reviews` - Calificar complejo (1-5 estrellas).
+11. `GET /reviews/:complexId` - Ver reviews de un lugar.
+12. `GET /notifications` - Leer notificaciones (Histórico).
+13. `PUT /notifications/:id/read` - Marcar como leída.
+
+**Tus Cloud Functions (En `index.js` principal):**
+
+- `notifyOnApplicant`: Trigger Firestore. Cuando alguien hace `apply`, escribir en **Realtime Database** en la ruta `/notifications/{ownerId}`.
+- `calculateRating`: Trigger Firestore. Al entrar nueva review, actualizar promedio del complejo.
+
+---
+
+## 5. Ejemplo de Código Sagrado 📜
+
+Cualquier endpoint que escriban DEBE verse así. (Ejemplo: Crear Reserva).
+
+**1. El Controlador (`controllers/reservation.controller.js`)**
+
+JavaScript
+
+```jsx
+import * as reservationService from '../services/reservation.service.js';
+
+export const createHold = async (req, res) => {
+  try {
+    // 1. Extraer datos
+    const { fieldId, date, time, userId } = req.body;
+    // 2. Llamar al servicio
+    const result = await reservationService.holdSlot(fieldId, date, time, userId);
+    // 3. Responder
+    return res.status(201).json({ success: true, data: result });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+```
+
+**2. El Servicio (`services/reservation.service.js`)**
+
+JavaScript
+
+```jsx
+import * as reservationRepo from '../repositories/reservation.repository.js';
+
+export const holdSlot = async (fieldId, date, time, userId) => {
+  // 1. Lógica: ¿Está libre? (Simplificado)
+  // 2. Lógica: Calcular expiración
+  const expiresAt = Date.now() + 15 * 60 * 1000; 
+  // 3. Persistir
+  return await reservationRepo.saveHold({ fieldId, date, time, userId, expiresAt });
+};
+```
+
+**3. El Repositorio (`repositories/reservation.repository.js`)**
+
+JavaScript
+
+```jsx
+import { db } from '../../config/firebase.js'; 
+
+export const saveHold = async (data) => {
+  const docRef = await db.collection('holds').add(data);
+  return { id: docRef.id, ...data };
+};
+```
+
+---
+
+## 6. Base de Datos (Modelo de Datos) 💾
+
+Para que no se pisen, usen estos nombres de colecciones:
+
+**En Firestore:**
+
+- `owners` (Dueños)
+- `players` (Jugadores)
+- `complexes` -> sub-colección: `fields` (Canchas)
+- `reservations` (Reservas confirmadas)
+- `holds` (Bloqueos temporales)
+- `matchmaking` (Solicitudes de jugadores)
+- `reviews` (Calificaciones)
+
+**En Realtime Database:**
+
+- `notifications/{userId}/{notificationId}` -> `{ message: "...", read: false, timestamp: ... }`
+
+---
+
+## 7. Integración Final (El `index.js` Global) 🔗
+
+Cuando terminen, su archivo `functions/index.js` debe verse así:
+
+JavaScript
+
+```jsx
+import { onRequest } from "firebase-functions/v2/https";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import express from "express";
+import cors from "cors";
+
+// Importar las Apps de cada uno
+import managementApp from "./src/management/index.js";
+import bookingsApp from "./src/bookings/index.js";
+import socialApp from "./src/social/index.js";
+
+// Exportar las APIs (Endpoints)
+export const apiManagement = onRequest(managementApp);
+export const apiBookings = onRequest(bookingsApp);
+export const apiSocial = onRequest(socialApp);
+
+// Exportar los Triggers (Background)
+// Acá importan las funciones sueltas de sus archivos triggers.js
+// export const checkExpiredHolds = ...
+// export const notifyOnApplicant = ...
+```
+
+---
+
+## 8. Estrategia de Datos Iniciales (El "Seed" Manual) 🌱
+
+Problema: Dev B necesita canchas para probar reservas, pero Dev A aún no hizo el endpoint de "Crear Cancha".
+
+Solución: Creamos una "Base de Datos Maestra de Prueba" manualmente en la consola de Firebase ANTES de empezar a programar.
+
+¿Quién lo hace?
+
+Nos juntamos los 3 en una llamada (Discord/Meet) y uno comparte pantalla. Lo hacen HOY.
+
+¿Cómo lo hacemos?
+
+Entran a la Consola de Firebase -> Firestore Database -> + Agregar documento.
+
+Tienen que crear exactamente estos datos ficticios. Esto es el "Contrato de Datos" basado en la documentación oficial.
+
+### A. Colección: `users` (Jugadores y Dueños)
+
+*Responsable del esquema: Dev C*
+
+Crear un documento con ID manual: `user_admin_test`
+
+```json
+{
+  "uid": "user_admin_test",
+  "email": "dueno@test.com",
+  "role": "owner", // [cite: 84]
+  "name": "Dueño Pepe",
+  "createdAt": (Timestamp actual)
+}
+```
+
+Crear un documento con ID manual: `user_player_test`
+
+```json
+{
+  "uid": "user_player_test",
+  "email": "jugador@test.com",
+  "role": "player", // [cite: 84]
+  "name": "Lionel Messi",
+  "phone": "+5491112345678", // [cite: 84]
+  "positionLevel": "Delantero / Experto", // [cite: 84]
+  "createdAt": (Timestamp actual)
+}
+```
+
+### B. Colección: `complexes` (Complejos)
+
+*Responsable del esquema: Dev A*
+
+Crear un documento con ID manual: `complex_test_1`
+
+JSON
+
+```json
+{
+  "ownerId": "user_admin_test", // Vinculado al usuario de arriba [cite: 86]
+  "name": "Complejo El Monumental",
+  "description": "El mejor complejo de la zona",
+  "addressText": "Av. Figueroa Alcorta 7597",
+  "phone": "1112345678",
+  "geo": { "lat": -34.54, "lng": -58.44 }, // [cite: 86]
+  "photos": ["https://via.placeholder.com/150"], // Array de strings
+  "openHour": 9,
+  "closeHour": 23,
+  "depositMinPct": 10, // Seña del 10% [cite: 107]
+  "createdAt": (Timestamp actual)
+}
+```
+
+### C. Colección: `fields` (Canchas)
+
+Responsable del esquema: Dev A
+
+Nota: La documentación sugiere una colección fields vinculada por ID.
+
+Crear un documento con ID manual: `field_test_1`
+
+```json
+{
+  "complexId": "complex_test_1", // Vinculado al complejo de arriba [cite: 88]
+  "label": "Cancha 1 - Techada",
+  "type": "Futbol 5", // [cite: 88]
+  "indoor": true,
+  "surface": "Sintético",
+  "priceHourNoLight": 10000, // [cite: 88]
+  "priceHourWithLight": 12000,
+  "createdAt": (Timestamp actual)
+}
+```
+
+### D. Colección: `reservations` (Reservas)
+
+*Responsable del esquema: Dev B*
+
+Crear un documento con ID manual: `reserva_test_1`
+
+```json
+{
+  "status": "paid", // Importante para pruebas [cite: 90]
+  "userId": "user_player_test",
+  "complexId": "complex_test_1",
+  "fieldId": "field_test_1",
+  "date": "2025-12-01", // Formato YYYY-MM-DD
+  "startTime": "20:00", // Formato HH:MM
+  "durationMin": 60,
+  "depositAmount": 1000, // 10% del precio
+  "paymentId": "mock_mp_123"
+}
+```
+
+---
+
+### 📝 Instrucciones para Desarrollar (Regla de Consumo)
+
+Una vez creados estos datos, cada uno trabaja así:
+
+1. **Dev A (Gestión):** Cuando programes `GET /complexes/mine`, usá el `uid` fijo `user_admin_test` para probar. Debería devolverte el "Complejo El Monumental".
+2. **Dev B (Reservas):** Cuando programes `POST /bookings/hold`, usá el `fieldId` fijo `field_test_1`. No intentes crear canchas desde tu código, asumí que esa ya existe.
+3. **Dev C (Social):** Cuando programes `POST /matchmaking/create`, usá la reserva `reserva_test_1`. Asumí que esa reserva ya está pagada y lista.
+
+**Beneficio:** Si los 3 usan estos IDs fijos ("Hardcodeados" temporalmente para testear), pueden trabajar **en paralelo** hoy mismo sin esperar a que el compañero termine su parte.
+
+---
+
+### ✅ Próximo paso inmediato para el equipo
+
+1. **Reunión de 15 min:** Entran a Firebase.
+2. **Creación:** Uno crea las colecciones y documentos copiando y pegando los JSON de arriba.
+3. **Confirmación:** Los otros dos verifican en su PC que ven los mismos datos.
+4. **A codear:** Cada uno se va a su carpeta (`management`, `bookings`, `social`) y empieza a crear sus rutas.
