@@ -43,3 +43,21 @@ export async function getMatchFeed(req, res) {
     return res.status(500).json({ error: 'Error al obtener el feed.' });
   }
 }
+
+// POST /matchmaking/:id/apply - Postularse a un partido
+export async function applyToMatch(req, res) {
+  try {
+    const uid = req.user.uid;
+    const { id } = req.params;
+
+    const result = await matchmakingService.applyToMatch(uid, id);
+
+    return res.status(200).json({ success: true, message: 'Solicitud enviada', data: result });
+  } catch (error) {
+    // Errores de negocio devuelven 400
+    if (error.message.includes('partido') || error.message.includes('propio')) {
+       return res.status(400).json({ error: error.message });
+    }
+    return res.status(500).json({ error: error.message });
+  }
+}

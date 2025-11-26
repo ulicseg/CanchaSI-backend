@@ -20,3 +20,24 @@ export async function getActiveMatches() {
 
   return matches;
 }
+
+// Buscar un partido por ID
+export async function getMatchById(matchId) {
+  const doc = await db.collection('matchmaking').doc(matchId).get();
+  if (!doc.exists) return null;
+  return { id: doc.id, ...doc.data() };
+}
+
+// Guardar la postulación en la sub-colección 'applicants'
+export async function addApplicant(matchId, userId) {
+  await db.collection('matchmaking').doc(matchId)
+    .collection('applicants')
+    .doc(userId)
+    .set({
+      userId: userId,
+      status: 'pending',
+      appliedAt: new Date()
+    });
+    
+  return { matchId, userId, status: 'pending' };
+}

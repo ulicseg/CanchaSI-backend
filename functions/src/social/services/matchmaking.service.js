@@ -24,3 +24,24 @@ export async function publishRequest(uid, requestData) {
 export async function getFeed() {
   return await matchmakingRepo.getActiveMatches();
 }
+
+export async function applyToMatch(uid, matchId) {
+  // Verifico que el partido exista
+  const match = await matchmakingRepo.getMatchById(matchId);
+  if (!match) {
+    throw new Error('El partido no existe.');
+  }
+
+  // Verifico que esté abierto
+  if (match.status !== 'OPEN') {
+    throw new Error('Este partido ya está cerrado o completo.');
+  }
+
+  // No puedo postularme a mi propio partido
+  if (match.ownerId === uid) {
+    throw new Error('No puedes postularte a tu propio partido.');
+  }
+
+  // Guardo la postulación
+  return await matchmakingRepo.addApplicant(matchId, uid);
+}
