@@ -17,7 +17,6 @@ router.get('/feed', verifyToken, getMatchFeed);
 // Postularse a un partido
 router.post('/:id/apply', verifyToken, applyToMatch);
 
-// --- NUEVAS RUTAS ---
 
 // 1. Ver postulantes (Solo dueño)
 router.get('/:id/applicants', verifyToken, getApplicants);
