@@ -43,6 +43,18 @@ export const getBookingById = async (bookingId) => {
   };
 };
 
+//cancelar reserva
+export const updateBooking = async (bookingId, updateData) => {
+  await db.collection('bookings').doc(bookingId).update(updateData);
+  
+  // Devolver el booking actualizado
+  const updatedDoc = await db.collection('bookings').doc(bookingId).get();
+  return {
+    id: updatedDoc.id,
+    ...updatedDoc.data()
+  };
+};
+
 export const getFieldById = async (fieldId) => {
   const doc = await db.collection('fields').doc(fieldId).get();
   

@@ -46,3 +46,37 @@ export const getBookingById = async (req, res) => {
     });
   }
 };
+
+// cancelar reserva
+
+export const cancelBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.uid;
+
+    const result = await bookingService.cancelBooking(id, userId);
+
+    return res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error('Error canceling booking:', error);
+    
+    // Errores específicos con códigos HTTP apropiados
+    if (error.message === 'Booking not found') {
+      return res.status(404).json({ success: false, error: error.message });
+    }
+    if (error.message === 'Unauthorized access to booking' || error.message === 'Cannot cancel booking of another user') {
+      return res.status(403).json({ success: false, error: error.message });
+    }
+    if (error.message === 'Booking is already cancelled' || error.message.includes('Cannot cancel')) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
