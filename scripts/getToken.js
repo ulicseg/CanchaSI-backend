@@ -1,13 +1,23 @@
 // scripts/getToken.js
-// USO: node scripts/getToken.js
+// USO: 
+//   - Token jugador (por defecto): node scripts/getToken.js
+//   - Token dueño: node scripts/getToken.js dueno@test.com dueno123
 
 // --- CONFIGURACIÓN ---
 const API_KEY = "AIzaSyB-3VDg4HhPLcYaUcRJQ34WSC30j71xSGE"; // Corregida desde Firebase Console
-const EMAIL = "jugador@test.com";
-const PASSWORD = "password123";
+
+// Opción 1: Valores por defecto (jugador)
+const DEFAULT_EMAIL = "jugador@test.com";
+const DEFAULT_PASSWORD = "password123";
+
+// Opción 2: Argumentos desde línea de comandos
+const EMAIL = process.argv[2] || DEFAULT_EMAIL;
+const PASSWORD = process.argv[3] || DEFAULT_PASSWORD;
 
 async function getIdToken() {
   console.log("🔄 Solicitando token a Firebase...");
+  console.log(`📧 Email: ${EMAIL}\n`);
+  
   const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`;
 
   try {
