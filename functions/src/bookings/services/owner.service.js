@@ -34,7 +34,7 @@ export const createManualBooking = async (bookingData) => {
     date,
     time,
     status: 'confirmed',
-    bookingType: 'manual', // Indica que fue creada manualmente por el dueño
+    bookingType: 'manual',
     createdBy: ownerId,
     customerInfo: {
       name: customerName,
@@ -43,7 +43,7 @@ export const createManualBooking = async (bookingData) => {
     },
     notes: notes || null,
     amount: field.pricePerHour || 0,
-    paymentMethod: 'manual', // Pago gestionado fuera del sistema
+    paymentMethod: 'manual',
     createdAt: now,
     confirmedAt: now
   };
@@ -97,7 +97,7 @@ export const cancelBookingAsOwner = async (bookingId, ownerId, reason) => {
     cancelledAt: now,
     cancelledBy: ownerId,
     cancellationReason: reason || 'Cancelled by owner',
-    refundPercentage: 100, // El dueño puede decidir reembolso completo
+    refundPercentage: 100,
     refundAmount: booking.amount,
     refundPolicy: 'Cancelled by complex owner - Full refund'
   });
@@ -108,5 +108,58 @@ export const cancelBookingAsOwner = async (bookingId, ownerId, reason) => {
     message: 'Booking cancelled successfully by owner',
     refundAmount: booking.amount,
     reason: reason || 'Cancelled by owner'
+  };
+};
+
+//repuublicar
+export const relistSlot = async (bookingId, ownerId) => {
+  // 1. Obtener la reserva
+  const booking = await ownerRepository.getBookingById(bookingId);
+  if (!booking) {
+    throw new Error('Booking not found');
+  }
+
+  // 2. Verificar que esté cancelada
+  if (booking.status !== 'cancelled') {
+    throw new Error('Only cancelled bookings can be relisted');
+  }
+
+  // 3. Obtener la cancha y complejo
+  const field = await ownerRepository.getFieldById(booking.fieldId);
+  const complex = field ? await ownerRepository.getComplexById(field.complexId) : null;
+
+  if (!complex) {
+    throw new Error('Complex not found');
+  }
+
+  // 4. Verificar que sea el dueño del complejo
+  if (complex.ownerId !== ownerId) {
+    throw new Error('You are not the owner of this complex');
+  }
+
+  // 5. Marcar como "relisted" (o eliminar según preferencia)
+  const now = new Date();
+  await ownerRepository.updateBooking(bookingId, {
+    status: 'relisted',
+    relistedAt: now,
+    relistedBy: ownerId
+  });
+
+  return {
+    bookingId: booking.id,
+    fieldId: booking.fieldId,
+    date: booking.date,
+    time: booking.time,
+    status: 'relisted',
+    message: 'Slot is now available for booking again',
+    field: {
+      id: field.id,
+      name: field.name,
+      sport: field.sport
+    },
+    complex: {
+      id: complex.id,
+      name: complex.name
+    }
   };
 };

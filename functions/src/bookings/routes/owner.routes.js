@@ -1,6 +1,6 @@
 import express from 'express';
-import { createManualBooking, cancelBookingAsOwner } from '../controllers/owner.controller.js';
 import { verifyToken } from '../../shared/middlewares/auth.middleware.js';
+import { cancelBookingAsOwner, createManualBooking, relistSlot } from '../controllers/owner.controller.js';
 
 const router = express.Router();
 
@@ -9,5 +9,8 @@ router.post('/bookings/manual', verifyToken, createManualBooking);
 
 // POST /owner/bookings/:id/cancel - Cancelar reserva como dueño
 router.post('/bookings/:id/cancel', verifyToken, cancelBookingAsOwner);
+
+// POST /owner/relist-slot - Republicar horario cancelado
+router.post('/relist-slot', verifyToken, relistSlot);
 
 export default router;
