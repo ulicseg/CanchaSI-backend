@@ -5,3 +5,18 @@ export async function createMatchRequest(data) {
   const docRef = await db.collection('matchmaking').add(data);
   return { id: docRef.id, ...data };
 }
+
+// Obtiene todas las búsquedas activas (Feed)
+export async function getActiveMatches() {
+  const snapshot = await db.collection('matchmaking')
+    .where('status', '==', 'OPEN')
+    .orderBy('createdAt', 'desc')
+    .get();
+
+  const matches = [];
+  snapshot.forEach(doc => {
+    matches.push({ id: doc.id, ...doc.data() });
+  });
+
+  return matches;
+}

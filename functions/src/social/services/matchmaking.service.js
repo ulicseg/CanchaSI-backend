@@ -20,3 +20,7 @@ export async function publishRequest(uid, requestData) {
   
   return createdMatch;
 }
+
+export async function getFeed() {
+  return await matchmakingRepo.getActiveMatches();
+}

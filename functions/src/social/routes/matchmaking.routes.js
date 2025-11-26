@@ -1,10 +1,12 @@
 import { Router } from 'express';
-import { createMatch } from '../controllers/matchmaking.controller.js';
+import { createMatch, getMatchFeed } from '../controllers/matchmaking.controller.js';
 import { verifyToken } from '../../shared/middlewares/auth.middleware.js';
 
 const router = Router();
 
-// Solo usuarios logueados pueden crear búsquedas
 router.post('/create', verifyToken, createMatch);
+
+// Ver el feed de partidos disponibles
+router.get('/feed', verifyToken, getMatchFeed);
 
 export default router;

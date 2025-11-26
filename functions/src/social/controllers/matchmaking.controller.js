@@ -31,3 +31,15 @@ export async function createMatch(req, res) {
     return res.status(500).json({ error: 'Error interno al crear la búsqueda.' });
   }
 }
+
+// GET /matchmaking/feed - Listar partidos disponibles
+export async function getMatchFeed(req, res) {
+  try {
+    const feed = await matchmakingService.getFeed();
+    
+    return res.status(200).json({ success: true, data: feed });
+  } catch (error) {
+    console.error('Error getting feed:', error);
+    return res.status(500).json({ error: 'Error al obtener el feed.' });
+  }
+}
