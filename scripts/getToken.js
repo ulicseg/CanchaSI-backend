@@ -4,9 +4,9 @@
 import fs from 'fs';
 
 // --- CONFIGURACIÓN (COMPLETAR ESTO) ---
-const API_KEY = "TU_WEB_API_KEY_DE_FIREBASE"; // Leer abajo dónde encontrarla
-const EMAIL = "jugador@test.com"; // El usuario que creaste en Auth
-const PASSWORD = "password123";   // La contraseña que le pusiste
+const API_KEY = "AIzaSyB-3VDg4HhPLcYaUcRJQ34WSC30j71xSGE";
+const EMAIL = "prueba@test.com"; // El usuario que creaste en Auth
+const PASSWORD = "prueba123";   // La contraseña que le pusiste
 
 async function getIdToken() {
   console.log("🔄 Solicitando token a Firebase...");

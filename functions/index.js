@@ -1,6 +1,5 @@
 import { onRequest } from "firebase-functions/v2/https";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { onSchedule } from "firebase-functions/v2/scheduler";
+
 
 // Importar las Apps de cada uno
 import managementApp from "./src/management/index.js";
