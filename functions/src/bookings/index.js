@@ -7,13 +7,15 @@ app.use(express.json());
 
 // Routes
 import availabilityRoutes from './routes/availability.routes.js';
-import bookingsRoutes from './routes/hold.routes.js';
+import bookingRoutes from './routes/booking.routes.js';
+import holdRoutes from './routes/hold.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import searchRoutes from './routes/search.routes.js';
 
-app.use('/bookings', bookingsRoutes);
+app.use('/bookings/hold', holdRoutes);
 app.use('/search', searchRoutes);
 app.use('/availability', availabilityRoutes);
 app.use('/mp', paymentRoutes);
+app.use('/bookings', bookingRoutes);
 
 export default app;
