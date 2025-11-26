@@ -61,3 +61,48 @@ export async function applyToMatch(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
+
+// GET /:id/applicants
+export async function getApplicants(req, res) {
+  try {
+    const uid = req.user.uid;
+    const { id } = req.params; // ID del partido
+
+    const applicants = await matchmakingService.getMatchApplicants(uid, id);
+    
+    return res.status(200).json({ success: true, data: applicants });
+  } catch (error) {
+    // Si da error de permiso, devolvemos 403 Forbidden
+    if (error.message.includes('permiso') || error.message.includes('autorizado')) {
+      return res.status(403).json({ error: error.message });
+    }
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+// PUT .../accept
+export async function acceptPlayer(req, res) {
+  try {
+    const uid = req.user.uid;
+    // La URL tiene dos parámetros: el ID del partido y el ID del postulante
+    const { matchId, applicantId } = req.params;
+
+    const result = await matchmakingService.acceptApplicant(uid, matchId, applicantId);
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+}
+
+// PUT .../reject
+export async function rejectPlayer(req, res) {
+  try {
+    const uid = req.user.uid;
+    const { matchId, applicantId } = req.params;
+
+    const result = await matchmakingService.rejectApplicant(uid, matchId, applicantId);
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+}

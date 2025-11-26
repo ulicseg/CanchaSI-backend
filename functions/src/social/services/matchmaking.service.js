@@ -45,3 +45,58 @@ export async function applyToMatch(uid, matchId) {
   // Guardo la postulación
   return await matchmakingRepo.addApplicant(matchId, uid);
 }
+
+/**
+ * Ver postulantes (Solo para el dueño).
+ */
+export async function getMatchApplicants(uid, matchId) {
+  // 1. Buscamos el partido para ver quién es el dueño
+  const match = await matchmakingRepo.getMatchById(matchId);
+  
+  if (!match) throw new Error('Partido no encontrado');
+  
+  // 2. Seguridad: ¿Sos el dueño?
+  if (match.ownerId !== uid) {
+    throw new Error('No tienes permiso para ver los postulantes de este partido.');
+  }
+
+  return await matchmakingRepo.getApplicants(matchId);
+}
+
+/**
+ * Aceptar a un jugador.
+ */
+export async function acceptApplicant(uid, matchId, applicantId) {
+  // 1. Verificaciones de dueño
+  const match = await matchmakingRepo.getMatchById(matchId);
+  if (!match) throw new Error('Partido no encontrado');
+  if (match.ownerId !== uid) throw new Error('No autorizado');
+
+  // 2. Verificamos si hay lugar
+  if (match.missingPlayers <= 0) {
+    throw new Error('¡El partido ya está lleno! No puedes aceptar más jugadores.');
+  }
+
+  // 3. Actualizamos estado a 'accepted'
+  await matchmakingRepo.updateApplicantStatus(matchId, applicantId, 'accepted');
+
+  // 4. Restamos un cupo al partido
+  await matchmakingRepo.decrementMissingPlayers(matchId);
+
+  return { matchId, applicantId, status: 'accepted' };
+}
+
+/**
+ * Rechazar a un jugador.
+ */
+export async function rejectApplicant(uid, matchId, applicantId) {
+  // 1. Verificaciones de dueño
+  const match = await matchmakingRepo.getMatchById(matchId);
+  if (!match) throw new Error('Partido no encontrado');
+  if (match.ownerId !== uid) throw new Error('No autorizado');
+
+  // 2. Actualizamos estado a 'rejected' (No restamos cupo)
+  await matchmakingRepo.updateApplicantStatus(matchId, applicantId, 'rejected');
+
+  return { matchId, applicantId, status: 'rejected' };
+}
