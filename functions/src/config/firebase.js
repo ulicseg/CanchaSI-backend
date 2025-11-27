@@ -15,7 +15,7 @@ const serviceAccount = JSON.parse(
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
+  databaseURL: `https://${serviceAccount.project_id}-default-rtdb.firebaseio.com`
 });
 
 export const db = getFirestore();

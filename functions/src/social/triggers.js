@@ -25,6 +25,8 @@ export const notifyMatchCaptain = onDocumentCreated("matchmaking/{matchId}/appli
         // Escribimos en Realtime Database (Buzón del Capitán)
         const notificationRef = rtdb.ref(`notifications/${captainId}`).push();
         
+        console.log(`📝 Intentando escribir en: notifications/${captainId}`);
+        
         await notificationRef.set({
             type: 'NEW_APPLICANT',
             message: '¡Alguien quiere unirse a tu partido!',
@@ -34,8 +36,11 @@ export const notifyMatchCaptain = onDocumentCreated("matchmaking/{matchId}/appli
             timestamp: Date.now()
         });
 
+        console.log(`✅ Notificación escrita exitosamente`);
+
     } catch (error) {
-        console.error("Error en notifyMatchCaptain:", error);
+        console.error("❌ Error en notifyMatchCaptain:", error);
+        console.error("Stack:", error.stack);
     }
 });
 
@@ -70,6 +75,8 @@ export const notifyApplicantResolution = onDocumentUpdated("matchmaking/{matchId
         // Escribimos en Realtime Database (Buzón del Postulante)
         const notificationRef = rtdb.ref(`notifications/${applicantId}`).push();
 
+        console.log(`📝 Intentando escribir en: notifications/${applicantId}`);
+
         await notificationRef.set({
             type: 'APPLICATION_STATUS',
             message: messageText,
@@ -79,8 +86,11 @@ export const notifyApplicantResolution = onDocumentUpdated("matchmaking/{matchId
             timestamp: Date.now()
         });
 
+        console.log(`✅ Notificación de resolución escrita exitosamente`);
+
     } catch (error) {
-        console.error("Error en notifyApplicantResolution:", error);
+        console.error("❌ Error en notifyApplicantResolution:", error);
+        console.error("Stack:", error.stack);
     }
 });
 
@@ -112,11 +122,11 @@ export const calculateComplexRating = onDocumentCreated("reviews/{reviewId}", as
         const average = totalStars / count;
         const finalRating = Math.round(average * 10) / 10; // Redondeo a 1 decimal
 
-        // Actualizamos el complejo (Tarea de Dev A, pero la hacemos nosotros desde acá)
-        await db.collection('complexes').doc(complexId).update({
+        // Actualizamos el complejo (o lo creamos si no existe)
+        await db.collection('complexes').doc(complexId).set({
             rating: finalRating,
             ratingCount: count
-        });
+        }, { merge: true });
         
         console.log(`✅ Rating actualizado: ${finalRating} (${count} votos)`);
 
