@@ -1,9 +1,12 @@
 {
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
   "functions": [
     {
       "source": "functions",
       "codebase": "default",
-      "disallowLegacyRuntimeConfig": true,
       "ignore": [
         "node_modules",
         ".git",
@@ -19,6 +22,12 @@
   "emulators": {
     "functions": {
       "port": 5010
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "auth": {
+      "port": 9099
     },
     "ui": {
       "enabled": true,
