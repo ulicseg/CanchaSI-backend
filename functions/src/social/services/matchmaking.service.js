@@ -4,7 +4,6 @@ export async function publishRequest(uid, requestData) {
   // Armo el objeto con toda la info del aviso
   const newMatch = {
     ownerId: uid,
-    bookingId: requestData.bookingId,
     complexName: requestData.complexName || "Cancha Sin Nombre",
     date: requestData.date,
     time: requestData.time,
@@ -14,6 +13,11 @@ export async function publishRequest(uid, requestData) {
     createdAt: new Date(),
     applicants: []
   };
+
+  // Solo incluir bookingId si existe
+  if (requestData.bookingId) {
+    newMatch.bookingId = requestData.bookingId;
+  }
 
   // Guardo en la base de datos
   const createdMatch = await matchmakingRepo.createMatchRequest(newMatch);
