@@ -4,7 +4,7 @@
 import fs from 'fs';
 
 // --- CONFIGURACIÓN (COMPLETAR ESTO) ---
-const API_KEY = "TU_WEB_API_KEY_DE_FIREBASE"; // Leer abajo dónde encontrarla
+const API_KEY = "AIzaSyB-3VDg4HhPLcYaUcRJQ34WSC30j71xSGE"; // Leer abajo dónde encontrarla
 const EMAIL = "jugador@test.com"; // El usuario que creaste en Auth
 const PASSWORD = "password123";   // La contraseña que le pusiste
 
