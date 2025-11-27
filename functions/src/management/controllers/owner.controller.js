@@ -4,9 +4,18 @@ export const register = async (req, res) => {
     try {
         // Obtener el UID seguro desde el token inyectado por el middleware
         const uid = req.user && req.user.uid;
+        const email = req.user && req.user.email; // Obtener email del token
+
         if (!uid) return res.status(401).json({ error: 'No autorizado' });
+
         const result = await ownerService.registerOwner(uid, req.body);
-        res.status(201).json({ success: true, data: result });
+
+        // Mensaje más claro para el usuario
+        res.status(201).json({
+            success: true,
+            message: `Cuenta de dueño vinculada exitosamente para ${email}`,
+            data: result
+        });
     } catch (error) { res.status(500).json({ error: error.message }); }
 };
 

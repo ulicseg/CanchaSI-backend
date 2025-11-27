@@ -1,7 +1,7 @@
 import { db } from '../../config/firebase.js';
 
 const collection = db.collection('complexes');
-const reservationsCollection = db.collection('reservations');
+const reservationsCollection = db.collection('bookings');
 
 // Crear complejo (inicia con array de fotos vacío)
 export const create = async (data) => {
@@ -50,12 +50,12 @@ export const getComplexReservations = async (complexId) => {
 export const getOwnerStats = async (ownerId) => {
     const complexes = await findByOwner(ownerId);
     const complexIds = complexes.map(c => c.id);
-    
+
     if (complexIds.length === 0) return { revenue: 0, totalReservations: 0 };
 
     // Nota: Firestore limita 'in' a 10 items. Para MVP funciona bien.
     const snapshot = await reservationsCollection.where('complexId', 'in', complexIds).get();
-    
+
     let totalReservations = 0;
     let revenue = 0;
 

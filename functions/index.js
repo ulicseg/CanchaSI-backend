@@ -23,21 +23,19 @@ import { cleanExpiredHolds } from "./src/bookings/triggers/hold.triggers.js";
 // Triggers de social (DEV C) ✅
 import * as socialTriggers from "./src/social/triggers.js";
 
-// ========== CONFIGURAR APP MANAGEMENT (DEV A) ==========
-const managementApp = express();
-managementApp.use(cors({ origin: true }));
-managementApp.use(express.json());
-managementApp.use("/", managementRoutes);
 
-// ========== HTTP FUNCTIONS (APIs REST) ==========
-// DEV A - Management ✅
-export const apiManagement = onRequest(managementApp);
 
-// DEV B - Bookings ✅
-export const apiBookings = onRequest(bookingsApp);
+// ========== MAIN API (Unified) ==========
+const mainApp = express();
+mainApp.use(cors({ origin: true }));
+mainApp.use(express.json());
 
-// DEV C - Social ✅
-export const apiSocial = onRequest(socialApp);
+// Mount sub-apps
+mainApp.use("/management", managementRoutes); // Note: managementRoutes is a Router, not an App, so this is correct
+mainApp.use("/bookings", bookingsApp);
+mainApp.use("/social", socialApp);
+
+export const api = onRequest(mainApp);
 
 // ========== TRIGGER FUNCTIONS (Background) ==========
 // DEV A - Triggers de Management ✅

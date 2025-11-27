@@ -1,6 +1,6 @@
 import * as availabilityRepository from '../repositories/availability.repository.js';
 
-export const getFieldAvailability = async (fieldId, date) => {
+export const getFieldAvailability = async (fieldId, date, time = null) => {
   // 1. Obtener información del field y su complejo
   const field = await availabilityRepository.getFieldById(fieldId);
   if (!field) {
@@ -13,7 +13,17 @@ export const getFieldAvailability = async (fieldId, date) => {
   }
 
   // 2. Generar todos los slots del día basados en openHour y closeHour
-  const allSlots = generateTimeSlots(complex.openHour, complex.closeHour, date);
+  let allSlots = generateTimeSlots(complex.openHour, complex.closeHour, date);
+
+  // Si se especifica una hora, filtrar solo esa hora
+  if (time) {
+    if (!allSlots.includes(time)) {
+      // Si la hora solicitada no está dentro del horario de apertura
+      allSlots = [time];
+    } else {
+      allSlots = [time];
+    }
+  }
 
   // 3. Obtener reservas y holds existentes para ese día
   const bookings = await availabilityRepository.getBookingsByFieldAndDate(fieldId, date);
@@ -21,7 +31,7 @@ export const getFieldAvailability = async (fieldId, date) => {
 
   // 4. Marcar slots como ocupados
   const occupiedTimes = new Set();
-  
+
   bookings.forEach(booking => {
     occupiedTimes.add(booking.time);
   });
@@ -31,11 +41,18 @@ export const getFieldAvailability = async (fieldId, date) => {
   });
 
   // 5. Retornar slots con estado de disponibilidad
-  const availableSlots = allSlots.map(slot => ({
-    time: slot,
-    available: !occupiedTimes.has(slot),
-    price: field.pricePerHour
-  }));
+  const availableSlots = allSlots.map(slot => {
+    // Verificar si está dentro del horario de apertura si se pidió una hora específica fuera de rango
+    const hour = parseInt(slot.split(':')[0]);
+    const isOpen = hour >= complex.openHour && hour < complex.closeHour;
+
+    return {
+      time: slot,
+      available: isOpen && !occupiedTimes.has(slot),
+      price: field.pricePerHour,
+      reason: !isOpen ? 'Closed' : (occupiedTimes.has(slot) ? 'Occupied' : 'Available')
+    };
+  });
 
   return {
     fieldId,

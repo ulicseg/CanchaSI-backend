@@ -14,7 +14,7 @@ export const updateComplex = async (id, data) => complexRepo.update(id, data);
 export const getMyComplexes = async (ownerId) => complexRepo.findByOwner(ownerId);
 
 // Gestión de fotos
-export const addPhoto = async (id, { url }) => complexRepo.addPhotoUrl(id, url);
+export const addPhoto = async (id, { photoUrl }) => complexRepo.addPhotoUrl(id, photoUrl);
 export const deletePhoto = async (id, index) => complexRepo.removePhotoByIndex(id, Number(index));
 
 // Agenda y Stats

@@ -5,10 +5,8 @@ export async function publishRequest(uid, requestData) {
   // Armo el objeto con toda la info del aviso
   const newMatch = {
     ownerId: uid,
-    date: requestData.date,
-    time: requestData.time,
-    fieldType: requestData.fieldType,
-    location: requestData.location,
+    ownerId: uid,
+    // date, time, fieldType, location se llenarán desde la reserva
     totalPlayers: Number(requestData.totalPlayers),
     missingPlayers: Number(requestData.missingPlayers),
     description: requestData.description || "¡Faltan jugadores!",
@@ -20,31 +18,45 @@ export async function publishRequest(uid, requestData) {
   // Si viene bookingId, obtener datos del complejo desde Management
   if (requestData.bookingId) {
     newMatch.bookingId = requestData.bookingId;
-    
+
     try {
-      const booking = await db.collection('reservations').doc(requestData.bookingId).get();
+      const booking = await db.collection('bookings').doc(requestData.bookingId).get();
       if (booking.exists) {
         const bookingData = booking.data();
-        const complex = await db.collection('complexes').doc(bookingData.complexId).get();
-        newMatch.complexId = bookingData.complexId;
-        newMatch.complexName = complex.exists ? complex.data().name : "Complejo";
+
+        // 1. Datos básicos de la reserva
+        newMatch.date = bookingData.date;
+        newMatch.time = bookingData.time;
         newMatch.fieldId = bookingData.fieldId;
+        newMatch.complexId = bookingData.complexId;
+
+        // 2. Buscar datos de la cancha
+        const field = await db.collection('fields').doc(bookingData.fieldId).get();
+        if (field.exists) {
+          newMatch.fieldType = field.data().type;
+        }
+
+        // 3. Buscar datos del complejo
+        const complex = await db.collection('complexes').doc(bookingData.complexId).get();
+        if (complex.exists) {
+          const complexData = complex.data();
+          newMatch.complexName = complexData.name;
+          newMatch.location = complexData.addressText;
+        } else {
+          newMatch.complexName = "Complejo";
+        }
       }
     } catch (error) {
       console.error('Error obteniendo datos de la reserva:', error);
-      // Si falla, usar datos por defecto
-      newMatch.complexName = "Complejo";
+      throw new Error('Error al obtener datos de la reserva. Verifique el ID.');
     }
-  }
-
-  // FALLBACK: Para testing sin bookingId o si falla la consulta
-  if (!newMatch.complexName) {
-    newMatch.complexName = requestData.complexName || "Cancha Sin Nombre";
+  } else {
+    throw new Error('El ID de la reserva (bookingId) es obligatorio.');
   }
 
   // Guardo en la base de datos
   const createdMatch = await matchmakingRepo.createMatchRequest(newMatch);
-  
+
   return createdMatch;
 }
 
@@ -79,9 +91,9 @@ export async function applyToMatch(uid, matchId) {
 export async function getMatchApplicants(uid, matchId) {
   // 1. Buscamos el partido para ver quién es el dueño
   const match = await matchmakingRepo.getMatchById(matchId);
-  
+
   if (!match) throw new Error('Partido no encontrado');
-  
+
   // 2. Seguridad: ¿Sos el dueño?
   if (match.ownerId !== uid) {
     throw new Error('No tienes permiso para ver los postulantes de este partido.');
@@ -122,7 +134,7 @@ export async function rejectApplicant(uid, matchId, applicantId) {
   if (!match) throw new Error('Partido no encontrado');
   if (match.ownerId !== uid) throw new Error('No autorizado');
 
-  // 2. Actualizamos estado a 'rejected' (No restamos cupo)
+  // 2. Actualizamos estado a 'rejected' 
   await matchmakingRepo.updateApplicantStatus(matchId, applicantId, 'rejected');
 
   return { matchId, applicantId, status: 'rejected' };

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CanchaSI API - Swagger UI</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB-3VDg4HhPLcYaUcRJQ34WSC30j71xSGE",
+            authDomain: "canchasi-backend.firebaseapp.com",
+            projectId: "canchasi-backend",
+            storageBucket: "canchasi-backend.firebasestorage.app",
+            messagingSenderId: "554627659470",
+            appId: "1:554627659470:web:94baeeb808177e778e429f",
+            databaseURL: "https://canchasi-backend-default-rtdb.firebaseio.com",
+            measurementId: "G-7K95GLD1CF"
+        };
+
+        try {
+            window.firebaseApp = initializeApp(firebaseConfig);
+            window.firebaseAuth = getAuth(window.firebaseApp);
+            console.log('✅ Firebase inicializado');
+        } catch (error) {
+            console.error('❌ Error Firebase:', error);
+        }
+    </script>
+</head>
+
+<body>
+    <!-- HEADER -->
+    <header class="swagger-header">
+        <div class="header-content">
+            <div class="logo-section">
+                <h1>CanchaSI API</h1>
+                <span class="api-version">v1.0.0</span>
+            </div>
+            <div class="auth-section">
+                <div class="auth-status" id="authStatus">
+                    <span class="status-indicator offline"></span>
+                    <span>No autenticado</span>
+                </div>
+                <button class="btn-auth" id="authBtn">Autenticar</button>
+                <div class="user-info" id="userInfo" style="display: none;">
+                    <span id="userEmail"></span>
+                    <button class="btn-logout" id="logoutBtn">Salir</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <div class="swagger-container">
+        <!-- SIDEBAR -->
+        <aside class="swagger-sidebar">
+            <div class="sidebar-header">
+                <h2>Endpoints</h2>
+                <input type="text" id="endpointSearch" placeholder="Buscar endpoint..." class="search-input">
+            </div>
+            <nav class="endpoint-nav" id="endpointNav">
+                <!-- Se llena dinámicamente -->
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="swagger-main">
+            <div class="endpoint-viewer" id="endpointViewer">
+                <div class="welcome-screen">
+                    <h1>Bienvenido a CanchaSI API</h1>
+                    <p>Selecciona un endpoint del menú lateral para comenzar</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- AUTH MODAL -->
+    <div class="modal" id="authModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Autenticación Firebase</h2>
+                <button class="close-btn" id="closeAuthModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="authForm">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="authEmail" placeholder="tu@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="authPassword" placeholder="••••••••" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Iniciar Sesión</button>
+                        <p class="form-hint">Se creará una cuenta nueva si no existe</p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLIPBOARD PANEL -->
+    <div class="clipboard-panel" id="clipboardPanel">
+        <div class="clipboard-header">
+            <h3>📋 Portapapeles de IDs</h3>
+            <button class="btn-toggle-clipboard" id="toggleClipboard">▼</button>
+        </div>
+        <div class="clipboard-body" id="clipboardBody">
+            <div class="clipboard-add">
+                <input type="text" id="clipboardLabel" placeholder="Etiqueta (ej: complejo_1)">
+                <input type="text" id="clipboardValue" placeholder="ID o valor">
+                <button class="btn-add-clipboard" onclick="addToClipboard()">Agregar</button>
+            </div>
+            <div class="clipboard-items" id="clipboardItems">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

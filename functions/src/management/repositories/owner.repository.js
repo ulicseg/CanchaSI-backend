@@ -1,6 +1,6 @@
 import { db } from '../../config/firebase.js';
 
-const collection = db.collection('owners');
+const collection = db.collection('users');
 
 export const createOrUpdate = async (uid, data) => {
     // Usamos 'merge' para actualizar sin borrar datos existentes

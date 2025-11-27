@@ -19,6 +19,26 @@ export async function verifyToken(req, res, next) {
     // 4. Inyectamos el usuario seguro en el request
     req.user = decodedToken;
 
+    // 5. Auto-crear usuario en Firestore si no existe (primera vez que se loguea)
+    try {
+      const { db } = await import('../../config/firebase.js');
+      const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+
+      if (!userDoc.exists) {
+        // Crear usuario con rol 'player' por defecto
+        await db.collection('users').doc(decodedToken.uid).set({
+          email: decodedToken.email || null,
+          role: 'player',
+          createdAt: new Date(),
+          lastLogin: new Date()
+        });
+        console.log(`Usuario auto-creado en Firestore: ${decodedToken.uid}`);
+      }
+    } catch (dbError) {
+      // No bloqueamos la autenticación si falla la creación del usuario
+      console.error('Error auto-creando usuario:', dbError);
+    }
+
     next();
   } catch (error) {
     console.error('Error de autenticación:', error);
