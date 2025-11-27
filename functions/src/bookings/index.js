@@ -8,6 +8,7 @@ app.use(express.json());
 // Routes
 import availabilityRoutes from './routes/availability.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
+import favoritesRoutes from './routes/favorites.routes.js';
 import holdRoutes from './routes/hold.routes.js';
 import ownerRoutes from './routes/owner.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
@@ -19,5 +20,6 @@ app.use('/availability', availabilityRoutes);
 app.use('/mp', paymentRoutes);
 app.use('/bookings', bookingRoutes);
 app.use('/owner', ownerRoutes);
+app.use('/favorites', favoritesRoutes);
 
 export default app;
