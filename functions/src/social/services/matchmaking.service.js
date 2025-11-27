@@ -1,12 +1,15 @@
 import * as matchmakingRepo from '../repositories/matchmaking.repository.js';
+import { db } from '../../config/firebase.js';
 
 export async function publishRequest(uid, requestData) {
   // Armo el objeto con toda la info del aviso
   const newMatch = {
     ownerId: uid,
-    complexName: requestData.complexName || "Cancha Sin Nombre",
     date: requestData.date,
     time: requestData.time,
+    fieldType: requestData.fieldType,
+    location: requestData.location,
+    totalPlayers: Number(requestData.totalPlayers),
     missingPlayers: Number(requestData.missingPlayers),
     description: requestData.description || "¡Faltan jugadores!",
     status: 'OPEN',
@@ -14,9 +17,27 @@ export async function publishRequest(uid, requestData) {
     applicants: []
   };
 
-  // Solo incluir bookingId si existe
+  // Si viene bookingId, obtener datos del complejo desde Management
   if (requestData.bookingId) {
     newMatch.bookingId = requestData.bookingId;
+    
+    // TODO: Cuando Management esté integrado, descomentar esto:
+    // const booking = await db.collection('reservations').doc(requestData.bookingId).get();
+    // if (booking.exists) {
+    //   const bookingData = booking.data();
+    //   const complex = await db.collection('complexes').doc(bookingData.complexId).get();
+    //   newMatch.complexId = bookingData.complexId;
+    //   newMatch.complexName = complex.exists ? complex.data().name : "Complejo";
+    //   newMatch.fieldId = bookingData.fieldId;
+    // }
+  }
+
+  // TEMPORAL: Para testing sin bookingId
+  // Cuando Management esté listo, este campo debería venir siempre del bookingId
+  if (requestData.complexName) {
+    newMatch.complexName = requestData.complexName;
+  } else {
+    newMatch.complexName = "Cancha Sin Nombre";
   }
 
   // Guardo en la base de datos

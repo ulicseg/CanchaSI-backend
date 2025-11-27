@@ -7,7 +7,17 @@ export async function createMatch(req, res) {
     const uid = req.user.uid;
     
     // Datos del aviso
-    const { bookingId, complexName, date, time, missingPlayers, description } = req.body;
+    const { 
+      bookingId,      // Opcional: ID de reserva de Bookings (cuando esté integrado)
+      complexName,    // TEMPORAL: Para testing sin bookingId
+      date, 
+      time, 
+      fieldType,
+      location,
+      totalPlayers,
+      missingPlayers, 
+      description 
+    } = req.body;
 
     // Validación básica
     if (!missingPlayers || missingPlayers < 1) {
@@ -17,9 +27,12 @@ export async function createMatch(req, res) {
     // Creo el aviso
     const result = await matchmakingService.publishRequest(uid, {
       bookingId,
-      complexName,
+      complexName,  // TEMPORAL
       date,
       time,
+      fieldType,
+      location,
+      totalPlayers,
       missingPlayers,
       description
     });
