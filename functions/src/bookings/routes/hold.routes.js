@@ -5,6 +5,6 @@ import { createHold } from '../controllers/hold.controller.js';
 const router = express.Router();
 
 // POST /bookings/hold - Crear hold temporal (requiere autenticación)
-router.post('/hold', verifyToken, createHold);
+router.post('/', verifyToken, createHold);
 
 export default router;
