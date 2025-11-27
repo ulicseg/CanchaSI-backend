@@ -21,23 +21,25 @@ export async function publishRequest(uid, requestData) {
   if (requestData.bookingId) {
     newMatch.bookingId = requestData.bookingId;
     
-    // TODO: Cuando Management esté integrado, descomentar esto:
-    // const booking = await db.collection('reservations').doc(requestData.bookingId).get();
-    // if (booking.exists) {
-    //   const bookingData = booking.data();
-    //   const complex = await db.collection('complexes').doc(bookingData.complexId).get();
-    //   newMatch.complexId = bookingData.complexId;
-    //   newMatch.complexName = complex.exists ? complex.data().name : "Complejo";
-    //   newMatch.fieldId = bookingData.fieldId;
-    // }
+    try {
+      const booking = await db.collection('reservations').doc(requestData.bookingId).get();
+      if (booking.exists) {
+        const bookingData = booking.data();
+        const complex = await db.collection('complexes').doc(bookingData.complexId).get();
+        newMatch.complexId = bookingData.complexId;
+        newMatch.complexName = complex.exists ? complex.data().name : "Complejo";
+        newMatch.fieldId = bookingData.fieldId;
+      }
+    } catch (error) {
+      console.error('Error obteniendo datos de la reserva:', error);
+      // Si falla, usar datos por defecto
+      newMatch.complexName = "Complejo";
+    }
   }
 
-  // TEMPORAL: Para testing sin bookingId
-  // Cuando Management esté listo, este campo debería venir siempre del bookingId
-  if (requestData.complexName) {
-    newMatch.complexName = requestData.complexName;
-  } else {
-    newMatch.complexName = "Cancha Sin Nombre";
+  // FALLBACK: Para testing sin bookingId o si falla la consulta
+  if (!newMatch.complexName) {
+    newMatch.complexName = requestData.complexName || "Cancha Sin Nombre";
   }
 
   // Guardo en la base de datos
